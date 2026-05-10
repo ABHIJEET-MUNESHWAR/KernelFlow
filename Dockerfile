@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- builder ----------
-# Pinned to a Rust new enough for libp2p 0.54 (>= 1.83) and wasmtime 23.
-FROM rust:1.83-slim-bookworm AS builder
+# Pinned to a Rust new enough for libp2p 0.54 (>= 1.83) plus the
+# `edition2024` Cargo feature required by transitive deps like `idna_adapter`
+# (stabilized in 1.85).
+FROM rust:1.85-slim-bookworm AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev clang cmake build-essential ca-certificates git \
     libclang-dev protobuf-compiler && \
