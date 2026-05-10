@@ -1,9 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- builder ----------
-FROM rust:1.80-slim-bookworm AS builder
+# Pinned to a Rust new enough for libp2p 0.54 (>= 1.83) and wasmtime 23.
+FROM rust:1.83-slim-bookworm AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libssl-dev clang cmake build-essential ca-certificates git && \
+    pkg-config libssl-dev clang cmake build-essential ca-certificates git \
+    libclang-dev protobuf-compiler && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
