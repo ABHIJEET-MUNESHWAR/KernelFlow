@@ -19,14 +19,14 @@ async fn main() -> anyhow::Result<()> {
     let registry = NodeRegistry::with_stdlib();
     // Composition-time validation of the wiring (Kernel-style).
     registry.validate_edge("constant", "median")?;
-    registry.validate_edge("median",   "threshold")?;
+    registry.validate_edge("median", "threshold")?;
 
     // Build the DAG: 3 price sources -> median -> threshold>3000.
     let dag = DagBuilder::<&'static str>::new("eth-threshold-3000")
-        .node("p1",        "constant")
-        .node("p2",        "constant")
-        .node("p3",        "constant")
-        .node("median",    "median")
+        .node("p1", "constant")
+        .node("p2", "constant")
+        .node("p3", "constant")
+        .node("median", "median")
         .node("threshold", "threshold")
         .edge("p1", "median", EdgeCondition::Always)
         .edge("p2", "median", EdgeCondition::Always)
@@ -43,19 +43,20 @@ async fn main() -> anyhow::Result<()> {
     ]);
 
     let scheduler = Scheduler::new(SchedulerConfig::default());
-    let attestation = scheduler.run(&dag, |id, kind| -> Arc<dyn WorkflowNode> {
-        match *kind {
-            "constant" => {
-                let v = prices.get(id).cloned().unwrap_or(serde_json::json!(0.0));
-                Arc::new(ConstantNode::new(v))
+    let attestation = scheduler
+        .run(&dag, |id, kind| -> Arc<dyn WorkflowNode> {
+            match *kind {
+                "constant" => {
+                    let v = prices.get(id).cloned().unwrap_or(serde_json::json!(0.0));
+                    Arc::new(ConstantNode::new(v))
+                }
+                "median" => Arc::new(MedianNode),
+                "threshold" => Arc::new(ThresholdNode::gt(3000.0)),
+                other => panic!("unknown kind {other}"),
             }
-            "median"    => Arc::new(MedianNode),
-            "threshold" => Arc::new(ThresholdNode::gt(3000.0)),
-            other       => panic!("unknown kind {other}"),
-        }
-    }).await?;
+        })
+        .await?;
 
     println!("attestation hash: {attestation}");
     Ok(())
 }
-

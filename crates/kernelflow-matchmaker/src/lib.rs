@@ -17,6 +17,7 @@
 pub mod operator;
 pub mod strategy;
 
-pub use operator::{Delegation, DelegationId, DelegationOutcome, Operator, OperatorId, OperatorRegistry};
+pub use operator::{
+    Delegation, DelegationId, DelegationOutcome, Operator, OperatorId, OperatorRegistry,
+};
 pub use strategy::{Matchmaker, ReputationMatchmaker};
-

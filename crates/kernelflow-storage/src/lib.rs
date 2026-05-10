@@ -14,14 +14,16 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use kernelflow_core::{KernelError, KernelResult};
-use rocksdb::{ColumnFamilyDescriptor, DB, Options};
+use rocksdb::{ColumnFamilyDescriptor, Options, DB};
 use serde::{de::DeserializeOwned, Serialize};
 
-const CF_EVENTS:       &str = "events";
-const CF_STATE:        &str = "state";
+const CF_EVENTS: &str = "events";
+const CF_STATE: &str = "state";
 const CF_ATTESTATIONS: &str = "attestations";
 
-pub struct Store { db: Arc<DB> }
+pub struct Store {
+    db: Arc<DB>,
+}
 
 impl Store {
     pub fn open(path: impl AsRef<Path>) -> KernelResult<Self> {
@@ -29,8 +31,8 @@ impl Store {
         opts.create_if_missing(true);
         opts.create_missing_column_families(true);
         let cfs = vec![
-            ColumnFamilyDescriptor::new(CF_EVENTS,       Options::default()),
-            ColumnFamilyDescriptor::new(CF_STATE,        Options::default()),
+            ColumnFamilyDescriptor::new(CF_EVENTS, Options::default()),
+            ColumnFamilyDescriptor::new(CF_STATE, Options::default()),
             ColumnFamilyDescriptor::new(CF_ATTESTATIONS, Options::default()),
         ];
         let db = DB::open_cf_descriptors(&opts, path, cfs)
@@ -38,30 +40,62 @@ impl Store {
         Ok(Self { db: Arc::new(db) })
     }
 
-    pub async fn put<V: Serialize + Send + 'static>(&self, cf: Cf, key: Vec<u8>, val: V) -> KernelResult<()> {
+    pub async fn put<V: Serialize + Send + 'static>(
+        &self,
+        cf: Cf,
+        key: Vec<u8>,
+        val: V,
+    ) -> KernelResult<()> {
         let db = self.db.clone();
         tokio::task::spawn_blocking(move || {
-            let bytes = bincode::serialize(&val).map_err(|e| KernelError::Storage(e.to_string()))?;
-            let h = db.cf_handle(cf.as_str()).ok_or_else(|| KernelError::Storage("cf missing".into()))?;
-            db.put_cf(&h, key, bytes).map_err(|e| KernelError::Storage(e.to_string()))
-        }).await.map_err(|e| KernelError::Storage(e.to_string()))?
+            let bytes =
+                bincode::serialize(&val).map_err(|e| KernelError::Storage(e.to_string()))?;
+            let h = db
+                .cf_handle(cf.as_str())
+                .ok_or_else(|| KernelError::Storage("cf missing".into()))?;
+            db.put_cf(&h, key, bytes)
+                .map_err(|e| KernelError::Storage(e.to_string()))
+        })
+        .await
+        .map_err(|e| KernelError::Storage(e.to_string()))?
     }
 
-    pub async fn get<V: DeserializeOwned + Send + 'static>(&self, cf: Cf, key: Vec<u8>) -> KernelResult<Option<V>> {
+    pub async fn get<V: DeserializeOwned + Send + 'static>(
+        &self,
+        cf: Cf,
+        key: Vec<u8>,
+    ) -> KernelResult<Option<V>> {
         let db = self.db.clone();
         tokio::task::spawn_blocking(move || {
-            let h = db.cf_handle(cf.as_str()).ok_or_else(|| KernelError::Storage("cf missing".into()))?;
-            let v = db.get_cf(&h, key).map_err(|e| KernelError::Storage(e.to_string()))?;
-            v.map(|b| bincode::deserialize::<V>(&b).map_err(|e| KernelError::Storage(e.to_string()))).transpose()
-        }).await.map_err(|e| KernelError::Storage(e.to_string()))?
+            let h = db
+                .cf_handle(cf.as_str())
+                .ok_or_else(|| KernelError::Storage("cf missing".into()))?;
+            let v = db
+                .get_cf(&h, key)
+                .map_err(|e| KernelError::Storage(e.to_string()))?;
+            v.map(|b| {
+                bincode::deserialize::<V>(&b).map_err(|e| KernelError::Storage(e.to_string()))
+            })
+            .transpose()
+        })
+        .await
+        .map_err(|e| KernelError::Storage(e.to_string()))?
     }
 }
 
 #[derive(Copy, Clone)]
-pub enum Cf { Events, State, Attestations }
+pub enum Cf {
+    Events,
+    State,
+    Attestations,
+}
 impl Cf {
     fn as_str(&self) -> &'static str {
-        match self { Cf::Events => CF_EVENTS, Cf::State => CF_STATE, Cf::Attestations => CF_ATTESTATIONS }
+        match self {
+            Cf::Events => CF_EVENTS,
+            Cf::State => CF_STATE,
+            Cf::Attestations => CF_ATTESTATIONS,
+        }
     }
 }
 
@@ -100,4 +134,3 @@ mod tests {
         assert_eq!(v, Some(42));
     }
 }
-

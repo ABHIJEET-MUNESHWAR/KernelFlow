@@ -7,14 +7,14 @@ use kernelflow_core::{KernelError, KernelResult, ResourceCapacity, ResourceRequi
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-pub type OperatorId    = String;
-pub type DelegationId  = uuid::Uuid;
+pub type OperatorId = String;
+pub type DelegationId = uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Operator {
-    pub id:        OperatorId,
-    pub total:     ResourceCapacity,
-    pub in_flight: ResourceCapacity,  // resources currently committed
+    pub id: OperatorId,
+    pub total: ResourceCapacity,
+    pub in_flight: ResourceCapacity, // resources currently committed
     /// Reputation in `[0.0, 1.0]`. EWMA of recent successful completions.
     pub reputation: f64,
 }
@@ -23,7 +23,10 @@ impl Operator {
     pub fn new(id: impl Into<OperatorId>, total: ResourceCapacity) -> Self {
         Self {
             id: id.into(),
-            in_flight: ResourceCapacity { capabilities: total.capabilities.clone(), ..Default::default() },
+            in_flight: ResourceCapacity {
+                capabilities: total.capabilities.clone(),
+                ..Default::default()
+            },
             total,
             reputation: 0.5,
         }
@@ -31,9 +34,15 @@ impl Operator {
 
     pub fn free(&self) -> ResourceCapacity {
         ResourceCapacity {
-            cpu_cores:    self.total.cpu_cores.saturating_sub(self.in_flight.cpu_cores),
-            ram_mb:       self.total.ram_mb.saturating_sub(self.in_flight.ram_mb),
-            gpu_vram_mb:  self.total.gpu_vram_mb.saturating_sub(self.in_flight.gpu_vram_mb),
+            cpu_cores: self
+                .total
+                .cpu_cores
+                .saturating_sub(self.in_flight.cpu_cores),
+            ram_mb: self.total.ram_mb.saturating_sub(self.in_flight.ram_mb),
+            gpu_vram_mb: self
+                .total
+                .gpu_vram_mb
+                .saturating_sub(self.in_flight.gpu_vram_mb),
             capabilities: self.total.capabilities.clone(),
         }
     }
@@ -46,9 +55,9 @@ impl Operator {
 /// A unit of work the workflow is asking the network to execute.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Delegation {
-    pub id:           DelegationId,
-    pub kind:         String,          // node kind (e.g. "circuit_prover")
-    pub args:         serde_json::Value,
+    pub id: DelegationId,
+    pub kind: String, // node kind (e.g. "circuit_prover")
+    pub args: serde_json::Value,
     pub requirements: ResourceRequirements,
 }
 
@@ -68,7 +77,9 @@ pub struct OperatorRegistry {
 }
 
 impl OperatorRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub async fn register(&self, op: Operator) {
         self.inner.write().await.insert(op.id.clone(), op);
@@ -85,20 +96,22 @@ impl OperatorRegistry {
     /// Reserve capacity. Returns `Err(RateLimited)` if not enough free resources.
     pub async fn reserve(&self, id: &str, req: &ResourceRequirements) -> KernelResult<()> {
         let mut g = self.inner.write().await;
-        let op = g.get_mut(id).ok_or_else(|| KernelError::NodeNotFound(id.into()))?;
+        let op = g
+            .get_mut(id)
+            .ok_or_else(|| KernelError::NodeNotFound(id.into()))?;
         if !op.can_take(req) {
             return Err(KernelError::RateLimited);
         }
-        op.in_flight.cpu_cores   += req.cpu_cores;
-        op.in_flight.ram_mb      += req.ram_mb;
+        op.in_flight.cpu_cores += req.cpu_cores;
+        op.in_flight.ram_mb += req.ram_mb;
         op.in_flight.gpu_vram_mb += req.gpu_vram_mb;
         Ok(())
     }
 
     pub async fn release(&self, id: &str, req: &ResourceRequirements) {
         if let Some(op) = self.inner.write().await.get_mut(id) {
-            op.in_flight.cpu_cores   = op.in_flight.cpu_cores.saturating_sub(req.cpu_cores);
-            op.in_flight.ram_mb      = op.in_flight.ram_mb.saturating_sub(req.ram_mb);
+            op.in_flight.cpu_cores = op.in_flight.cpu_cores.saturating_sub(req.cpu_cores);
+            op.in_flight.ram_mb = op.in_flight.ram_mb.saturating_sub(req.ram_mb);
             op.in_flight.gpu_vram_mb = op.in_flight.gpu_vram_mb.saturating_sub(req.gpu_vram_mb);
         }
     }
@@ -116,4 +129,3 @@ impl OperatorRegistry {
         }
     }
 }
-

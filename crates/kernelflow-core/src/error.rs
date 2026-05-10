@@ -55,4 +55,3 @@ pub mod anyhow_compat {
     #[error("{0}")]
     pub struct AnyError(pub Box<dyn std::error::Error + Send + Sync>);
 }
-

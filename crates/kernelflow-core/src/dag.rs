@@ -15,7 +15,10 @@ pub type WorkflowId = uuid::Uuid;
 pub enum EdgeCondition {
     Always,
     /// JSON-pointer (`/result/ok`) compared to a literal value.
-    JsonEq { pointer: String, value: serde_json::Value },
+    JsonEq {
+        pointer: String,
+        value: serde_json::Value,
+    },
 }
 
 impl EdgeCondition {
@@ -41,8 +44,8 @@ pub struct Edge {
 /// `Send + Sync + Serialize`) at compile time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dag<N> {
-    pub id:    WorkflowId,
-    pub name:  String,
+    pub id: WorkflowId,
+    pub name: String,
     pub nodes: BTreeMap<NodeId, N>,
     pub edges: Vec<Edge>,
 }
@@ -56,8 +59,11 @@ impl<N> Dag<N> {
         for e in &self.edges {
             *indeg.entry(e.to.clone()).or_default() += 1;
         }
-        let mut q: VecDeque<NodeId> =
-            indeg.iter().filter(|(_, &d)| d == 0).map(|(k, _)| k.clone()).collect();
+        let mut q: VecDeque<NodeId> = indeg
+            .iter()
+            .filter(|(_, &d)| d == 0)
+            .map(|(k, _)| k.clone())
+            .collect();
         let mut out = Vec::with_capacity(self.nodes.len());
         while let Some(n) = q.pop_front() {
             out.push(n.clone());
@@ -86,14 +92,18 @@ impl<N> Dag<N> {
 
 /// Fluent builder so the type system enforces "must call `build()`".
 pub struct DagBuilder<N> {
-    name:  String,
+    name: String,
     nodes: BTreeMap<NodeId, N>,
     edges: Vec<Edge>,
 }
 
 impl<N> DagBuilder<N> {
     pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into(), nodes: BTreeMap::new(), edges: Vec::new() }
+        Self {
+            name: name.into(),
+            nodes: BTreeMap::new(),
+            edges: Vec::new(),
+        }
     }
     pub fn node(mut self, id: impl Into<NodeId>, payload: N) -> Self {
         self.nodes.insert(id.into(), payload);
@@ -105,16 +115,29 @@ impl<N> DagBuilder<N> {
         to: impl Into<NodeId>,
         cond: EdgeCondition,
     ) -> Self {
-        self.edges.push(Edge { from: from.into(), to: to.into(), condition: cond });
+        self.edges.push(Edge {
+            from: from.into(),
+            to: to.into(),
+            condition: cond,
+        });
         self
     }
     pub fn build(self) -> KernelResult<Dag<N>> {
-        let dag = Dag { id: uuid::Uuid::new_v4(), name: self.name, nodes: self.nodes, edges: self.edges };
+        let dag = Dag {
+            id: uuid::Uuid::new_v4(),
+            name: self.name,
+            nodes: self.nodes,
+            edges: self.edges,
+        };
         // validate references
         let known: BTreeSet<&NodeId> = dag.nodes.keys().collect();
         for e in &dag.edges {
-            if !known.contains(&e.from) { return Err(KernelError::NodeNotFound(e.from.clone())); }
-            if !known.contains(&e.to)   { return Err(KernelError::NodeNotFound(e.to.clone())); }
+            if !known.contains(&e.from) {
+                return Err(KernelError::NodeNotFound(e.from.clone()));
+            }
+            if !known.contains(&e.to) {
+                return Err(KernelError::NodeNotFound(e.to.clone()));
+            }
         }
         let _ = dag.topo_sort()?; // reject cycles at build time.
         Ok(dag)
@@ -128,17 +151,21 @@ mod tests {
     #[test]
     fn topo_orders_simple_chain() {
         let dag = DagBuilder::<u32>::new("t")
-            .node("a", 1).node("b", 2).node("c", 3)
+            .node("a", 1)
+            .node("b", 2)
+            .node("c", 3)
             .edge("a", "b", EdgeCondition::Always)
             .edge("b", "c", EdgeCondition::Always)
-            .build().unwrap();
+            .build()
+            .unwrap();
         assert_eq!(dag.topo_sort().unwrap(), vec!["a", "b", "c"]);
     }
 
     #[test]
     fn cycle_is_rejected() {
         let r = DagBuilder::<u32>::new("t")
-            .node("a", 1).node("b", 2)
+            .node("a", 1)
+            .node("b", 2)
             .edge("a", "b", EdgeCondition::Always)
             .edge("b", "a", EdgeCondition::Always)
             .build();
@@ -147,9 +174,11 @@ mod tests {
 
     #[test]
     fn condition_json_eq() {
-        let c = EdgeCondition::JsonEq { pointer: "/ok".into(), value: serde_json::json!(true) };
+        let c = EdgeCondition::JsonEq {
+            pointer: "/ok".into(),
+            value: serde_json::json!(true),
+        };
         assert!(c.evaluate(&serde_json::json!({ "ok": true })));
         assert!(!c.evaluate(&serde_json::json!({ "ok": false })));
     }
 }
-

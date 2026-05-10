@@ -26,27 +26,35 @@ pub enum Capability {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ResourceRequirements {
-    pub cpu_cores:    u32,
-    pub ram_mb:       u32,
-    pub gpu_vram_mb:  u32,
+    pub cpu_cores: u32,
+    pub ram_mb: u32,
+    pub gpu_vram_mb: u32,
     pub capabilities: Vec<Capability>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ResourceCapacity {
-    pub cpu_cores:    u32,
-    pub ram_mb:       u32,
-    pub gpu_vram_mb:  u32,
+    pub cpu_cores: u32,
+    pub ram_mb: u32,
+    pub gpu_vram_mb: u32,
     pub capabilities: Vec<Capability>,
 }
 
 impl ResourceCapacity {
     /// Does this capacity satisfy the requested requirements?
     pub fn satisfies(&self, req: &ResourceRequirements) -> bool {
-        if self.cpu_cores   < req.cpu_cores   { return false; }
-        if self.ram_mb      < req.ram_mb      { return false; }
-        if self.gpu_vram_mb < req.gpu_vram_mb { return false; }
-        req.capabilities.iter().all(|c| self.capabilities.contains(c))
+        if self.cpu_cores < req.cpu_cores {
+            return false;
+        }
+        if self.ram_mb < req.ram_mb {
+            return false;
+        }
+        if self.gpu_vram_mb < req.gpu_vram_mb {
+            return false;
+        }
+        req.capabilities
+            .iter()
+            .all(|c| self.capabilities.contains(c))
     }
 }
 
@@ -54,7 +62,7 @@ impl ResourceCapacity {
 #[derive(Debug)]
 pub struct Reservation {
     pub op_id: String,
-    pub req:   ResourceRequirements,
+    pub req: ResourceRequirements,
 }
 
 #[cfg(test)]
@@ -63,17 +71,26 @@ mod tests {
     #[test]
     fn satisfies_matches_capabilities_and_resources() {
         let cap = ResourceCapacity {
-            cpu_cores: 8, ram_mb: 32_000, gpu_vram_mb: 24_000,
-            capabilities: vec![Capability::GpuProver { vram_mb: 24_000 }, Capability::HttpEgress],
+            cpu_cores: 8,
+            ram_mb: 32_000,
+            gpu_vram_mb: 24_000,
+            capabilities: vec![
+                Capability::GpuProver { vram_mb: 24_000 },
+                Capability::HttpEgress,
+            ],
         };
         let req = ResourceRequirements {
-            cpu_cores: 4, ram_mb: 8_000, gpu_vram_mb: 16_000,
+            cpu_cores: 4,
+            ram_mb: 8_000,
+            gpu_vram_mb: 16_000,
             capabilities: vec![Capability::HttpEgress],
         };
         assert!(cap.satisfies(&req));
 
-        let too_much = ResourceRequirements { cpu_cores: 16, ..req.clone() };
+        let too_much = ResourceRequirements {
+            cpu_cores: 16,
+            ..req.clone()
+        };
         assert!(!cap.satisfies(&too_much));
     }
 }
-

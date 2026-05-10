@@ -14,7 +14,7 @@ pub struct NodeActor {
 
 struct Msg {
     input: NodeInput,
-    ctx:   NodeContext,
+    ctx: NodeContext,
     reply: oneshot::Sender<KernelResult<NodeOutput>>,
 }
 
@@ -24,12 +24,14 @@ impl NodeActor {
         tokio::spawn(async move {
             while let Some(Msg { input, ctx, reply }) = rx.recv().await {
                 let node = node.clone();
-                let res = exec.run(|| {
-                    let node = node.clone();
-                    let ctx = ctx.clone();
-                    let input = input.clone();
-                    async move { node.execute(&ctx, input).await }
-                }).await;
+                let res = exec
+                    .run(|| {
+                        let node = node.clone();
+                        let ctx = ctx.clone();
+                        let input = input.clone();
+                        async move { node.execute(&ctx, input).await }
+                    })
+                    .await;
                 let _ = reply.send(res);
             }
         });
@@ -38,9 +40,11 @@ impl NodeActor {
 
     pub async fn call(&self, input: NodeInput, ctx: NodeContext) -> KernelResult<NodeOutput> {
         let (reply, rx) = oneshot::channel();
-        self.tx.send(Msg { input, ctx, reply }).await
+        self.tx
+            .send(Msg { input, ctx, reply })
+            .await
             .map_err(|_| kernelflow_core::KernelError::Network("actor mailbox closed".into()))?;
-        rx.await.map_err(|_| kernelflow_core::KernelError::Network("actor reply dropped".into()))?
+        rx.await
+            .map_err(|_| kernelflow_core::KernelError::Network("actor reply dropped".into()))?
     }
 }
-

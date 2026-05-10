@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use async_graphql::{Context, EmptyMutation, Object, Schema, SimpleObject, Subscription};
 use async_graphql_axum::{GraphQL, GraphQLSubscription};
-use axum::{Router, routing::get};
+use axum::{routing::get, Router};
 use futures::Stream;
 use tokio::sync::broadcast;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -30,14 +30,18 @@ pub struct QueryRoot;
 #[Object]
 impl QueryRoot {
     /// Health probe used by Docker/K8s.
-    async fn health(&self) -> &'static str { "ok" }
+    async fn health(&self) -> &'static str {
+        "ok"
+    }
 
-    async fn version(&self) -> &'static str { env!("CARGO_PKG_VERSION") }
+    async fn version(&self) -> &'static str {
+        env!("CARGO_PKG_VERSION")
+    }
 }
 
 #[derive(SimpleObject, Clone)]
 pub struct EventDto {
-    pub kind:    String,
+    pub kind: String,
     pub payload: String,
 }
 
@@ -65,13 +69,20 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .finish();
 
     Router::new()
-        .route("/graphql",
-               get(|| async { axum::response::Html(async_graphql::http::GraphiQLSource::build()
-                                                  .endpoint("/graphql").subscription_endpoint("/ws").finish()) })
-                  .post_service(GraphQL::new(schema.clone())))
+        .route(
+            "/graphql",
+            get(|| async {
+                axum::response::Html(
+                    async_graphql::http::GraphiQLSource::build()
+                        .endpoint("/graphql")
+                        .subscription_endpoint("/ws")
+                        .finish(),
+                )
+            })
+            .post_service(GraphQL::new(schema.clone())),
+        )
         .route_service("/ws", GraphQLSubscription::new(schema))
         .route("/health", get(|| async { "ok" }))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }
-

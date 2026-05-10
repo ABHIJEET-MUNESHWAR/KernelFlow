@@ -11,11 +11,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attestation {
-    pub workflow_id:  uuid::Uuid,
-    pub output_hash:  String,
+    pub workflow_id: uuid::Uuid,
+    pub output_hash: String,
     pub signer_pubkey_hex: String,
     pub signature_hex: String,
-    pub timestamp:    chrono::DateTime<chrono::Utc>,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 pub struct Attestor {
@@ -25,9 +25,13 @@ pub struct Attestor {
 impl Attestor {
     pub fn random() -> Self {
         let mut rng = rand::rngs::OsRng;
-        Self { key: SigningKey::generate(&mut rng) }
+        Self {
+            key: SigningKey::generate(&mut rng),
+        }
     }
-    pub fn pubkey(&self) -> VerifyingKey { self.key.verifying_key() }
+    pub fn pubkey(&self) -> VerifyingKey {
+        self.key.verifying_key()
+    }
     pub fn sign(&self, workflow_id: uuid::Uuid, output_hash: String) -> Attestation {
         let msg = format!("{workflow_id}|{output_hash}");
         let sig: Signature = self.key.sign(msg.as_bytes());
@@ -35,8 +39,8 @@ impl Attestor {
             workflow_id,
             output_hash,
             signer_pubkey_hex: hex::encode(self.pubkey().to_bytes()),
-            signature_hex:     hex::encode(sig.to_bytes()),
-            timestamp:         chrono::Utc::now(),
+            signature_hex: hex::encode(sig.to_bytes()),
+            timestamp: chrono::Utc::now(),
         }
     }
 }
@@ -47,7 +51,9 @@ pub trait OnchainSubmitter: Send + Sync {
 }
 
 /// Stubbed Solana submitter — wired up to a real RPC by setting `rpc_url`.
-pub struct SolanaAttestor { pub rpc_url: String }
+pub struct SolanaAttestor {
+    pub rpc_url: String,
+}
 
 #[async_trait]
 impl OnchainSubmitter for SolanaAttestor {
@@ -57,7 +63,11 @@ impl OnchainSubmitter for SolanaAttestor {
         // a `getHealth` smoke test so the integration path is exercised.
         let client = reqwest::Client::new();
         let body = serde_json::json!({"jsonrpc":"2.0","id":1,"method":"getHealth"});
-        let res = client.post(&self.rpc_url).json(&body).send().await
+        let res = client
+            .post(&self.rpc_url)
+            .json(&body)
+            .send()
+            .await
             .map_err(|e| KernelError::Attestation(e.to_string()))?;
         if !res.status().is_success() {
             return Err(KernelError::Attestation(format!("rpc {}", res.status())));
@@ -74,13 +84,13 @@ mod tests {
         let a = Attestor::random();
         let att = a.sign(uuid::Uuid::nil(), "deadbeef".into());
         let pk = VerifyingKey::from_bytes(
-            &<[u8; 32]>::try_from(hex::decode(att.signer_pubkey_hex).unwrap().as_slice()).unwrap()
-        ).unwrap();
+            &<[u8; 32]>::try_from(hex::decode(att.signer_pubkey_hex).unwrap().as_slice()).unwrap(),
+        )
+        .unwrap();
         let sig = Signature::from_bytes(
-            &<[u8; 64]>::try_from(hex::decode(att.signature_hex).unwrap().as_slice()).unwrap()
+            &<[u8; 64]>::try_from(hex::decode(att.signature_hex).unwrap().as_slice()).unwrap(),
         );
         let msg = format!("{}|{}", att.workflow_id, att.output_hash);
         assert!(pk.verify_strict(msg.as_bytes(), &sig).is_ok());
     }
 }
-

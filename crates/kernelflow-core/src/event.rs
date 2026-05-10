@@ -6,11 +6,28 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum KernelEvent {
-    WorkflowStarted   { workflow_id: uuid::Uuid, name: String },
-    NodeStarted       { workflow_id: uuid::Uuid, node_id: String, attempt: u32 },
-    NodeCompleted     { workflow_id: uuid::Uuid, node_id: String, outcome: NodeOutcome },
-    WorkflowCompleted { workflow_id: uuid::Uuid, attestation_hash: String },
-    WorkflowFailed    { workflow_id: uuid::Uuid, reason: String },
+    WorkflowStarted {
+        workflow_id: uuid::Uuid,
+        name: String,
+    },
+    NodeStarted {
+        workflow_id: uuid::Uuid,
+        node_id: String,
+        attempt: u32,
+    },
+    NodeCompleted {
+        workflow_id: uuid::Uuid,
+        node_id: String,
+        outcome: NodeOutcome,
+    },
+    WorkflowCompleted {
+        workflow_id: uuid::Uuid,
+        attestation_hash: String,
+    },
+    WorkflowFailed {
+        workflow_id: uuid::Uuid,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,4 +37,3 @@ pub enum NodeOutcome {
     Failure { error: String },
     Skipped { reason: String },
 }
-

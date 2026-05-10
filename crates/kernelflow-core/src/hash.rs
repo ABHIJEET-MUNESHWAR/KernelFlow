@@ -41,4 +41,3 @@ mod tests {
         assert_eq!(hash_json(&a), hash_json(&b));
     }
 }
-

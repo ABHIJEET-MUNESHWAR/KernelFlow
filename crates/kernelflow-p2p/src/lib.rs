@@ -6,8 +6,8 @@
 //! attestation hashes (foundation for BFT layer in v2).
 
 use kernelflow_core::{KernelError, KernelResult};
-use libp2p::{gossipsub, identity, swarm::SwarmEvent, tcp, yamux, noise, Multiaddr, PeerId};
 use libp2p::futures::StreamExt;
+use libp2p::{gossipsub, identity, noise, swarm::SwarmEvent, tcp, yamux, Multiaddr, PeerId};
 
 pub const TOPIC: &str = "kernelflow/events/v1";
 
@@ -18,8 +18,8 @@ struct KfBehaviour {
 
 pub struct P2pNode {
     pub peer_id: PeerId,
-    swarm:       libp2p::Swarm<KfBehaviour>,
-    topic:       gossipsub::IdentTopic,
+    swarm: libp2p::Swarm<KfBehaviour>,
+    topic: gossipsub::IdentTopic,
 }
 
 impl P2pNode {
@@ -31,30 +31,44 @@ impl P2pNode {
             .heartbeat_interval(std::time::Duration::from_secs(1))
             .build()
             .map_err(|e| KernelError::Network(e.to_string()))?;
-        let gossipsub = gossipsub::Behaviour::new(
-            gossipsub::MessageAuthenticity::Signed(kp.clone()),
-            gs_cfg,
-        ).map_err(|e| KernelError::Network(e.to_string()))?;
+        let gossipsub =
+            gossipsub::Behaviour::new(gossipsub::MessageAuthenticity::Signed(kp.clone()), gs_cfg)
+                .map_err(|e| KernelError::Network(e.to_string()))?;
 
         let topic = gossipsub::IdentTopic::new(TOPIC);
 
         let mut swarm = libp2p::SwarmBuilder::with_existing_identity(kp)
             .with_tokio()
-            .with_tcp(tcp::Config::default(), noise::Config::new, yamux::Config::default)
+            .with_tcp(
+                tcp::Config::default(),
+                noise::Config::new,
+                yamux::Config::default,
+            )
             .map_err(|e| KernelError::Network(e.to_string()))?
             .with_behaviour(|_| KfBehaviour { gossipsub })
             .map_err(|e| KernelError::Network(e.to_string()))?
             .build();
 
-        swarm.behaviour_mut().gossipsub.subscribe(&topic)
+        swarm
+            .behaviour_mut()
+            .gossipsub
+            .subscribe(&topic)
             .map_err(|e| KernelError::Network(e.to_string()))?;
-        swarm.listen_on(listen).map_err(|e| KernelError::Network(e.to_string()))?;
+        swarm
+            .listen_on(listen)
+            .map_err(|e| KernelError::Network(e.to_string()))?;
 
-        Ok(Self { peer_id, swarm, topic })
+        Ok(Self {
+            peer_id,
+            swarm,
+            topic,
+        })
     }
 
     pub fn publish(&mut self, payload: &[u8]) -> KernelResult<()> {
-        self.swarm.behaviour_mut().gossipsub
+        self.swarm
+            .behaviour_mut()
+            .gossipsub
             .publish(self.topic.clone(), payload)
             .map(|_| ())
             .map_err(|e| KernelError::Network(e.to_string()))
@@ -63,12 +77,13 @@ impl P2pNode {
     /// Drain swarm events; intended to be `tokio::spawn`ed.
     pub async fn run<F: FnMut(Vec<u8>) + Send + 'static>(mut self, mut on_msg: F) {
         while let Some(ev) = self.swarm.next().await {
-            if let SwarmEvent::Behaviour(KfBehaviourEvent::Gossipsub(
-                gossipsub::Event::Message { message, .. })) = ev
+            if let SwarmEvent::Behaviour(KfBehaviourEvent::Gossipsub(gossipsub::Event::Message {
+                message,
+                ..
+            })) = ev
             {
                 on_msg(message.data);
             }
         }
     }
 }
-

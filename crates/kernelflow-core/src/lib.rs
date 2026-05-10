@@ -12,16 +12,15 @@
 //! * **I**: trait surface is minimal & async.
 //! * **D**: scheduler/storage depend on these abstractions, not concretes.
 
+pub mod capability;
 pub mod dag;
 pub mod error;
 pub mod event;
 pub mod hash;
 pub mod node;
-pub mod capability;
 
 pub use capability::{Capability, Reservation, ResourceCapacity, ResourceRequirements};
 pub use dag::{Dag, DagBuilder, EdgeCondition, NodeId, WorkflowId};
 pub use error::{KernelError, KernelResult};
 pub use event::{KernelEvent, NodeOutcome};
 pub use node::{NodeContext, NodeInput, NodeOutput, WorkflowNode};
-

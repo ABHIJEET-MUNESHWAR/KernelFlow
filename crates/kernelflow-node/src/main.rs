@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use clap::Parser;
-use kernelflow_api::{AppState, build_router};
+use kernelflow_api::{build_router, AppState};
 use kernelflow_core::KernelEvent;
 use tokio::sync::broadcast;
 use tracing_subscriber::EnvFilter;
@@ -33,7 +33,9 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let _ = dotenvy::dotenv();
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
         .json()
         .init();
 
@@ -46,7 +48,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Event bus (event-driven μsvc backbone).
     let (events_tx, _) = broadcast::channel::<KernelEvent>(2048);
-    let state = Arc::new(AppState { events: events_tx.clone() });
+    let state = Arc::new(AppState {
+        events: events_tx.clone(),
+    });
 
     // GraphQL server
     let app = build_router(state.clone());
@@ -56,4 +60,3 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
     Ok(())
 }
-

@@ -15,9 +15,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use kernelflow_core::{
-    KernelError, KernelResult, ResourceRequirements, WorkflowNode,
-};
+use kernelflow_core::{KernelError, KernelResult, ResourceRequirements, WorkflowNode};
 use serde::{Deserialize, Serialize};
 
 pub mod constant;
@@ -51,10 +49,10 @@ pub enum TypeSig {
 /// shape *before* execution.
 #[derive(Debug, Clone)]
 pub struct NodeDescriptor {
-    pub kind:         &'static str,
-    pub doc:          &'static str,
-    pub input:        TypeSig,
-    pub output:       TypeSig,
+    pub kind: &'static str,
+    pub doc: &'static str,
+    pub input: TypeSig,
+    pub output: TypeSig,
     pub requirements: ResourceRequirements,
 }
 
@@ -66,22 +64,34 @@ pub type NodeFactory =
 #[derive(Default, Clone)]
 pub struct NodeRegistry {
     descriptors: HashMap<&'static str, NodeDescriptor>,
-    factories:   HashMap<&'static str, NodeFactory>,
+    factories: HashMap<&'static str, NodeFactory>,
 }
 
 impl NodeRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn register(&mut self, desc: NodeDescriptor, factory: NodeFactory) {
         self.descriptors.insert(desc.kind, desc.clone());
         self.factories.insert(desc.kind, factory);
     }
 
-    pub fn describe(&self, kind: &str) -> Option<&NodeDescriptor> { self.descriptors.get(kind) }
-    pub fn kinds(&self) -> impl Iterator<Item = &&'static str> { self.descriptors.keys() }
+    pub fn describe(&self, kind: &str) -> Option<&NodeDescriptor> {
+        self.descriptors.get(kind)
+    }
+    pub fn kinds(&self) -> impl Iterator<Item = &&'static str> {
+        self.descriptors.keys()
+    }
 
-    pub fn instantiate(&self, kind: &str, args: &serde_json::Value) -> KernelResult<Arc<dyn WorkflowNode>> {
-        let f = self.factories.get(kind)
+    pub fn instantiate(
+        &self,
+        kind: &str,
+        args: &serde_json::Value,
+    ) -> KernelResult<Arc<dyn WorkflowNode>> {
+        let f = self
+            .factories
+            .get(kind)
             .ok_or_else(|| KernelError::NodeNotFound(kind.to_string()))?;
         f(args)
     }
@@ -89,11 +99,16 @@ impl NodeRegistry {
     /// Validate that `producer.output` is assignable to `consumer.input`.
     /// Runs at composition time, before anyone burns CPU executing.
     pub fn validate_edge(&self, producer_kind: &str, consumer_kind: &str) -> KernelResult<()> {
-        let p = self.describe(producer_kind).ok_or_else(|| KernelError::NodeNotFound(producer_kind.into()))?;
-        let c = self.describe(consumer_kind).ok_or_else(|| KernelError::NodeNotFound(consumer_kind.into()))?;
+        let p = self
+            .describe(producer_kind)
+            .ok_or_else(|| KernelError::NodeNotFound(producer_kind.into()))?;
+        let c = self
+            .describe(consumer_kind)
+            .ok_or_else(|| KernelError::NodeNotFound(consumer_kind.into()))?;
         if !assignable(&p.output, &c.input) {
             return Err(KernelError::InvalidInput(format!(
-                "type mismatch: {producer_kind}: {:?} → {consumer_kind}: {:?}", p.output, c.input
+                "type mismatch: {producer_kind}: {:?} → {consumer_kind}: {:?}",
+                p.output, c.input
             )));
         }
         Ok(())
@@ -113,7 +128,8 @@ impl NodeRegistry {
 
 fn assignable(from: &TypeSig, to: &TypeSig) -> bool {
     use TypeSig::*;
-    matches!((from, to),
+    matches!(
+        (from, to),
         (Json, _) | (_, Json) // Json is the universal "any"
     ) || from == to
 }
@@ -137,8 +153,3 @@ mod tests {
         assert!(matches!(err, KernelError::InvalidInput(_)));
     }
 }
-
-// ---- helper: trivial async-friendly noop NodeContext clone shim ----
-#[allow(dead_code)]
-async fn _ensure_send(_n: Arc<dyn WorkflowNode>) {}
-
