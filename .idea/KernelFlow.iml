@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-ai/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-attest/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-core/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-matchmaker/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-node/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-node/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-nodes/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-p2p/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-sandbox/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-scheduler/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-scheduler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/kernelflow-storage/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

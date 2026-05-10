@@ -1,0 +1,23 @@
+[package]
+name        = "kernelflow-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Core types: workflow DAG, node trait, errors, events."
+
+[dependencies]
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+thiserror   = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+async-trait = { workspace = true }
+tracing     = { workspace = true }
+sha2        = { workspace = true }
+hex         = { workspace = true }
+bincode     = { workspace = true }
+
+[dev-dependencies]
+tokio    = { workspace = true }
+proptest = { workspace = true }
+

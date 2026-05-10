@@ -1,0 +1,33 @@
+[package]
+name        = "kernelflow-scheduler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tokio-actor scheduler with retry, timeout, rate-limit, circuit-breaker."
+
+[dependencies]
+kernelflow-core = { path = "../kernelflow-core" }
+tokio        = { workspace = true }
+tokio-util   = { workspace = true }
+futures      = { workspace = true }
+async-trait  = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+metrics      = { workspace = true }
+governor     = { workspace = true }
+failsafe     = { workspace = true }
+backoff      = { workspace = true }
+
+[dev-dependencies]
+tokio    = { workspace = true }
+mockall  = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "scheduler_bench"
+harness = false
+

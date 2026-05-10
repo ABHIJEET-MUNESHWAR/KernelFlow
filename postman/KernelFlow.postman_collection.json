@@ -1,0 +1,45 @@
+{
+  "info": {
+    "name": "KernelFlow GraphQL",
+    "_postman_id": "kernelflow-collection-001",
+    "description": "Smoke + functional tests for the KernelFlow GraphQL API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Health (REST)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "GraphQL — health",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\":\"{ health version }\"}"
+        },
+        "url": "{{baseUrl}}/graphql"
+      }
+    },
+    {
+      "name": "GraphQL — introspection",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\":\"{ __schema { types { name } } }\"}"
+        },
+        "url": "{{baseUrl}}/graphql"
+      }
+    }
+  ]
+}
+

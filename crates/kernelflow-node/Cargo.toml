@@ -1,0 +1,40 @@
+[package]
+name        = "kernelflow-node"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Main binary: wires every crate together behind a CLI."
+
+[[bin]]
+name = "kernelflow"
+path = "src/main.rs"
+
+[dependencies]
+kernelflow-core      = { path = "../kernelflow-core" }
+kernelflow-scheduler = { path = "../kernelflow-scheduler" }
+kernelflow-sandbox   = { path = "../kernelflow-sandbox" }
+kernelflow-storage   = { path = "../kernelflow-storage" }
+kernelflow-p2p       = { path = "../kernelflow-p2p" }
+kernelflow-attest    = { path = "../kernelflow-attest" }
+kernelflow-api       = { path = "../kernelflow-api" }
+kernelflow-ai        = { path = "../kernelflow-ai" }
+kernelflow-nodes     = { path = "../kernelflow-nodes" }
+kernelflow-matchmaker = { path = "../kernelflow-matchmaker" }
+
+tokio              = { workspace = true }
+clap               = { workspace = true }
+config             = { workspace = true }
+dotenvy            = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+anyhow             = { workspace = true }
+metrics            = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+axum               = { workspace = true }
+
+[[example]]
+name = "eth_threshold"
+path = "examples/eth_threshold.rs"
+

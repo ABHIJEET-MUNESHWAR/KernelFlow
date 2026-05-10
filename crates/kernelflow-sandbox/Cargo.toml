@@ -1,0 +1,22 @@
+[package]
+name        = "kernelflow-sandbox"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Wasmtime-based sandbox with fuel metering."
+
+[dependencies]
+kernelflow-core = { path = "../kernelflow-core" }
+wasmtime      = { workspace = true }
+wasmtime-wasi = { workspace = true }
+tokio         = { workspace = true }
+async-trait   = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+anyhow        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+

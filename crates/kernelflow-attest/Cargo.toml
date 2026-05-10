@@ -1,0 +1,23 @@
+[package]
+name        = "kernelflow-attest"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Onchain attestation: ed25519 signing + Solana submit stub."
+
+[dependencies]
+kernelflow-core = { path = "../kernelflow-core" }
+ed25519-dalek = { workspace = true }
+sha2          = { workspace = true }
+hex           = { workspace = true }
+rand          = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+async-trait   = { workspace = true }
+tokio         = { workspace = true }
+reqwest       = { workspace = true }
+uuid          = { workspace = true }
+chrono        = { workspace = true }
+
